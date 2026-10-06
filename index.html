@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saber 10 - HUB IA Demo</title>
+    <style>
+        :root {
+            --bg-principal: #0a0a0a;
+            --bg-card: #141414;
+            --bg-input: #1a1a1a;
+            --texto: #ffffff;
+            --texto-secundario: #a0a0a0;
+            --amarelo: #ffdd00;
+            --laranja: #ff6600;
+            --verde-limao: #39ff14;
+            --vermelho-erro: #ff3333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-principal); color: var(--texto); display: flex; height: 100vh; }
+
+        .sidebar { width: 320px; background-color: var(--bg-card); border-right: 2px solid var(--laranja); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .logo-container { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #222; }
+        .logo-img { width: 45px; height: 45px; object-fit: contain; border-radius: 4px; }
+        .logo-text { font-size: 18px; font-weight: bold; color: var(--texto); }
+        
+        .cta-box { background-color: var(--bg-principal); padding: 20px; border-radius: 8px; border: 1px solid var(--amarelo); display: flex; flex-direction: column; gap: 12px; text-align: center; }
+        .cta-box p { font-size: 14px; color: var(--texto-secundario); line-height: 1.4; }
+        
+        .btn-suporte { background-color: transparent; border: 2px solid var(--verde-limao); color: var(--texto); padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; transition: 0.3s; display: block; }
+        .btn-suporte:hover { background-color: var(--verde-limao); color: #000; box-shadow: 0 0 15px var(--verde-limao); }
+
+        .chat-container { flex: 1; display: flex; flex-direction: column; background-color: var(--bg-principal); }
+        .chat-header { padding: 20px; background-color: var(--bg-card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        .messages-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        
+        .message { max-width: 75%; padding: 15px; border-radius: 8px; line-height: 1.5; white-space: pre-wrap; }
+        .message.user { background-color: var(--bg-card); align-self: flex-end; border-left: 3px solid var(--amarelo); }
+        .message.ai { background-color: var(--bg-card); align-self: flex-start; border-left: 3px solid var(--verde-limao); }
+        .message.erro { background-color: #2a0000; align-self: flex-start; border-left: 3px solid var(--vermelho-erro); color: #ffcccc; font-size: 13px; }
+
+        .input-container { padding: 20px; background-color: var(--bg-card); display: flex; gap: 10px; border-top: 1px solid #222; }
+        .input-container input { flex: 1; padding: 15px; font-size: 16px; }
+        .btn-enviar { background-color: transparent; border: 2px solid var(--laranja); color: var(--texto); padding: 0 25px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-enviar:hover { background-color: var(--laranja); box-shadow: 0 0 15px var(--laranja); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo-container">
+            <img src="logo.png" alt="Saber 10" class="logo-img" onerror="this.style.display='none'">
+            <div class="logo-text">Saber 10 - HUB IA</div>
+        </div>
+        
+        <!-- ESPAÇO DE CAPTAÇÃO DE CLIENTES (HOOK) -->
+        <div class="cta-box">
+            <h4 style="color: var(--amarelo);">Gostou da Experiência?</h4>
+            <p>Esta é uma versão demonstrativa limitada. Podemos criar um Hub personalizado integrado com os dados e sistemas da sua empresa.</p>
+            <!-- Substitua o link abaixo pelo seu WhatsApp ou página de contato -->
+            <a href="ttps://wa.me/c/556784030688" target="_blank" class="btn-suporte">Contratar Suporte Técnico</a>
+        </div>
+        
+        <p style="font-size: 11px; color: var(--texto-secundario); text-align: center; margin-top: auto;">
+            Treinamento, Suporte e Estratégia
+        </p>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h3>Demonstração - Consultor Estratégico</h3>
+            <button class="btn-enviar" style="border-color: #333; font-size: 12px; padding: 5px 15px;" onclick="limparChat()">Limpar Chat</button>
+        </div>
+
+        <div class="messages-box" id="chat-messages"></div>
+
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Faça uma pergunta de teste para nossa IA..." onkeypress="verificarEnter(event)">
+            <button class="btn-enviar" onclick="enviarMensagem()">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        const SYSTEM_PROMPT = {
+            role: "system",
+            content: "Você é o Consultor Inteligente oficial da Saber 10. Forneça soluções em Treinamento, Suporte e Estratégia. Mantenha tom profissional e direto."
+        };
+
+        document.addEventListener("DOMContentLoaded", () => { renderizarHistorico(); });
+        function verificarEnter(event) { if (event.key === "Enter") enviarMensagem(); }
+        function obterHistorico() { return JSON.parse(localStorage.getItem("demo_history")) || []; }
+        function salvarHistorico(historico) { localStorage.setItem("demo_history", JSON.stringify(historico)); }
+        function limparChat() { localStorage.removeItem("demo_history"); renderizarHistorico(); }
+
+        function renderizarHistorico() {
+            const box = document.getElementById("chat-messages");
+            box.innerHTML = "";
+            const historico = obterHistorico();
+            historico.forEach(msg => {
+                const div = document.createElement("div");
+                div.className = `message ${msg.role === 'user' ? 'user' : (msg.role === 'error' ? 'erro' : 'ai')}`;
+                div.textContent = msg.content;
+                box.appendChild(div);
+            });
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function enviarMensagem() {
+            const input = document.getElementById("user-input");
+            const texto = input.value.trim();
+            if (!texto) return;
+
+            input.value = "";
+            let historico = obterHistorico();
+            historico.push({ role: "user", content: texto });
+            salvarHistorico(historico);
+            renderizarHistorico();
+
+            const box = document.getElementById("chat-messages");
+            const divPensando = document.createElement("div");
+            divPensando.className = "message ai";
+            divPensando.id = "msg-pensando";
+            divPensando.textContent = "Processando análise...";
+            box.appendChild(divPensando);
+            box.scrollTop = box.scrollHeight;
+
+            try {
+                // CHAMA A ROTA OCULTA DO SERVIDOR (A CHAVE NÃO APARECE NO CODIGO)
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "openrouter/free", // Gerencia automaticamente as IAs gratuitas estáveis
+                        messages: [SYSTEM_PROMPT, { role: "user", content: texto }]
+                    })
+                });
+
+                const data = await response.json();
+                if (document.getElementById("msg-pensando")) document.getElementById("msg-pensando").remove();
+
+                if (data && data.choices && data.choices[0].message) {
+                    historico.push({ role: "assistant", content: data.choices[0].message.content });
+                } else {
+                    historico.push({ role: "error", content: "Demonstração temporariamente indisponível. Entre em contato com o suporte corporativo." });
+                }
+                salvarHistorico(historico);
+            } catch (error) {
+                if (document.getElementById("msg-pensando")) document.getElementById("msg-pensando").remove();
+                historico.push({ role: "error", content: "Erro na conexão segura. Por favor, tente novamente mais tarde." });
+                salvarHistorico(historico);
+            }
+            renderizarHistorico();
+        }
+    </script>
+</body>
+</html>
+
