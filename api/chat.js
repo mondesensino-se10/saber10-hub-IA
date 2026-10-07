@@ -1,22 +1,26 @@
-export default async function handler(request, response) {
-    // Regras de liberação de segurança de rede (CORS)
-    response.setHeader('Access-Control-Allow-Credentials', true);
-    response.setHeader('Access-Control-Allow-Origin', '*');
-    response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    response.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+export const config = {
+  runtime: 'edge', // Força a Vercel a usar o motor de borda ultra rápido e sem bugs de formato
+};
+
+export default async function handler(request) {
+    // Configura os cabeçalhos de liberação de segurança (CORS)
+    const headers = {
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET,OPTIONS,PATCH,DELETE,POST,PUT',
+        'Access-Control-Allow-Headers': 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version',
+        'Content-Type': 'application/json'
+    };
 
     if (request.method === 'OPTIONS') {
-        return response.status(200).end();
+        return new Response(null, { status: 200, headers });
     }
 
     const apiKey = process.env.OPENROUTER_API_KEY;
 
     try {
-        // Correção do erro 500: Garante a leitura correta do texto vindo do chat
-        let body = request.body;
-        if (typeof body === 'string') {
-            body = JSON.parse(body);
-        }
+        // Lê os dados direto do chat no padrão Edge (limpo e sem erro 500)
+        const body = await request.json();
 
         const openRouterResponse = await fetch("https://openrouter.ai", {
             method: "POST",
@@ -28,9 +32,8 @@ export default async function handler(request, response) {
         });
 
         const data = await openRouterResponse.json();
-        return response.status(200).json(data);
+        return new Response(JSON.stringify(data), { status: 200, headers });
     } catch (error) {
-        console.error(error);
-        return response.status(500).json({ error: { message: "Erro interno no processamento dos dados." } });
+        return new Response(JSON.stringify({ error: { message: "Erro no processamento seguro dos dados." } }), { status: 500, headers });
     }
 }
