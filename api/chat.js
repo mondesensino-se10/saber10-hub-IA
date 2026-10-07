@@ -1,4 +1,5 @@
 export default async function handler(request, response) {
+    // Regras de liberação de segurança de rede (CORS)
     response.setHeader('Access-Control-Allow-Credentials', true);
     response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -11,7 +12,11 @@ export default async function handler(request, response) {
     const apiKey = process.env.OPENROUTER_API_KEY;
 
     try {
-        const body = request.body;
+        // Correção do erro 500: Garante a leitura correta do texto vindo do chat
+        let body = request.body;
+        if (typeof body === 'string') {
+            body = JSON.parse(body);
+        }
 
         const openRouterResponse = await fetch("https://openrouter.ai", {
             method: "POST",
@@ -25,6 +30,7 @@ export default async function handler(request, response) {
         const data = await openRouterResponse.json();
         return response.status(200).json(data);
     } catch (error) {
-        return response.status(500).json({ error: { message: "Erro interno no servidor seguro." } });
+        console.error(error);
+        return response.status(500).json({ error: { message: "Erro interno no processamento dos dados." } });
     }
 }
