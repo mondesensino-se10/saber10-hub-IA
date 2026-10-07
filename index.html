@@ -131,7 +131,7 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        model: "openrouter/free", // Gerencia automaticamente as IAs gratuitas estáveis
+                        model: "meta-llama/llama-3.2-3b-instruct:free", // Gerencia automaticamente as IAs gratuitas estáveis
                         messages: [SYSTEM_PROMPT, { role: "user", content: texto }]
                     })
                 });
