@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saber 10 - HUB IA </title>
+    <title>Saber 10 - HUB IA Demo</title>
     <style>
         :root {
             --bg-principal: #0a0a0a;
@@ -40,10 +40,12 @@
         .message.ai { background-color: var(--bg-card); align-self: flex-start; border-left: 3px solid var(--verde-limao); }
         .message.erro { background-color: #2a0000; align-self: flex-start; border-left: 3px solid var(--vermelho-erro); color: #ffcccc; font-size: 13px; }
 
-        .input-container { padding: 20px; background-color: var(--bg-card); display: flex; gap: 10px; border-top: 1px solid #222; }
-        .input-container input { flex: 1; padding: 15px; font-size: 16px; }
+        .input-container { padding: 20px; background-color: var(--bg-card); display: flex; gap: 10px; border-top: 1px solid #222; position: relative; }
+        .input-container input { flex: 1; padding: 15px; font-size: 16px; padding-right: 80px; }
         .btn-enviar { background-color: transparent; border: 2px solid var(--laranja); color: var(--texto); padding: 0 25px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn-enviar:hover { background-color: var(--laranja); box-shadow: 0 0 15px var(--laranja); }
+        
+        .char-counter { position: absolute; bottom: 25px; right: 140px; font-size: 11px; color: var(--texto-secundario); }
     </style>
 </head>
 <body>
@@ -54,12 +56,12 @@
             <div class="logo-text">Saber 10 - HUB IA</div>
         </div>
         
-        <!-- ESPAÇO DE CAPTAÇÃO DE CLIENTES (HOOK) -->
         <div class="cta-box">
             <h4 style="color: var(--amarelo);">Gostou da Experiência?</h4>
             <p>Esta é uma versão demonstrativa limitada. Podemos criar um Hub personalizado integrado com os dados e sistemas da sua empresa.</p>
-            <!-- Substitua o link abaixo pelo seu WhatsApp ou página de contato -->
-            <a href="ttps://wa.me/c/556784030688" target="_blank" class="btn-suporte">Contratar Suporte Técnico</a>
+            
+            <!-- LINK DO SEU WHATSAPP BUSINESS (Mude o DDD e o número se precisar) -->
+            <a href="https://wa.me." target="_blank" class="btn-suporte">Contratar Suporte Técnico</a>
         </div>
         
         <p style="font-size: 11px; color: var(--texto-secundario); text-align: center; margin-top: auto;">
@@ -76,7 +78,8 @@
         <div class="messages-box" id="chat-messages"></div>
 
         <div class="input-container">
-            <input type="text" id="user-input" placeholder="Faça uma pergunta de teste para nossa IA..." onkeypress="verificarEnter(event)">
+            <input type="text" id="user-input" maxlength="250" placeholder="Faça uma pergunta de teste para nossa IA..." onkeypress="verificarEnter(event)" oninput="atualizarContador()">
+            <span class="char-counter" id="contador">0/250</span>
             <button class="btn-enviar" onclick="enviarMensagem()">Enviar</button>
         </div>
     </div>
@@ -92,6 +95,11 @@
         function obterHistorico() { return JSON.parse(localStorage.getItem("demo_history")) || []; }
         function salvarHistorico(historico) { localStorage.setItem("demo_history", JSON.stringify(historico)); }
         function limparChat() { localStorage.removeItem("demo_history"); renderizarHistorico(); }
+        
+        function atualizarContador() {
+            const input = document.getElementById("user-input");
+            document.getElementById("contador").textContent = `${input.value.length}/250`;
+        }
 
         function renderizarHistorico() {
             const box = document.getElementById("chat-messages");
@@ -106,7 +114,7 @@
             box.scrollTop = box.scrollHeight;
         }
 
-                async function enviarMensagem() {
+        async function enviarMensagem() {
             const input = document.getElementById("user-input");
             const texto = input.value.trim();
             if (!texto) return;
@@ -128,7 +136,6 @@
             box.scrollTop = box.scrollHeight;
 
             try {
-                // Rota corrigida com cabeçalho de autenticação dinâmico para o proxy do Netlify
                 const response = await fetch("/api/chat", {
                     method: "POST",
                     headers: { 
@@ -145,12 +152,10 @@
 
                 if (data && data.choices && data.choices[0] && data.choices[0].message) {
                     historico.push({ role: "assistant", content: data.choices[0].message.content });
-                } else if (data && data.choices && data.choices.message) {
-                    historico.push({ role: "assistant", content: data.choices.message.content });
                 } else if (data && data.error) {
                     historico.push({ role: "error", content: `Erro OpenRouter: ${data.error.message}` });
                 } else {
-                    historico.push({ role: "error", content: "Demonstração indisponível temporariamente." });
+                    historico.push({ role: "error", content: "Demonstração indisponível temporariamente no servidor." });
                 }
                 salvarHistorico(historico);
             } catch (error) {
@@ -163,4 +168,3 @@
     </script>
 </body>
 </html>
-
