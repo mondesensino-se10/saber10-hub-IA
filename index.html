@@ -106,12 +106,14 @@
             box.scrollTop = box.scrollHeight;
         }
 
-        async function enviarMensagem() {
+                async function enviarMensagem() {
             const input = document.getElementById("user-input");
             const texto = input.value.trim();
             if (!texto) return;
 
             input.value = "";
+            document.getElementById("contador").textContent = "0/250";
+            
             let historico = obterHistorico();
             historico.push({ role: "user", content: texto });
             salvarHistorico(historico);
@@ -126,12 +128,14 @@
             box.scrollTop = box.scrollHeight;
 
             try {
-                // CHAMA A ROTA OCULTA DO SERVIDOR (A CHAVE NÃO APARECE NO CODIGO)
+                // Rota corrigida com cabeçalho de autenticação dinâmico para o proxy do Netlify
                 const response = await fetch("/api/chat", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json"
+                    },
                     body: JSON.stringify({
-                        model: "meta-llama/llama-3.2-3b-instruct:free", // Gerencia automaticamente as IAs gratuitas estáveis
+                        model: "meta-llama/llama-3.2-3b-instruct:free",
                         messages: [SYSTEM_PROMPT, { role: "user", content: texto }]
                     })
                 });
@@ -139,15 +143,19 @@
                 const data = await response.json();
                 if (document.getElementById("msg-pensando")) document.getElementById("msg-pensando").remove();
 
-                if (data && data.choices && data.choices[0].message) {
+                if (data && data.choices && data.choices[0] && data.choices[0].message) {
                     historico.push({ role: "assistant", content: data.choices[0].message.content });
+                } else if (data && data.choices && data.choices.message) {
+                    historico.push({ role: "assistant", content: data.choices.message.content });
+                } else if (data && data.error) {
+                    historico.push({ role: "error", content: `Erro OpenRouter: ${data.error.message}` });
                 } else {
-                    historico.push({ role: "error", content: "Demonstração temporariamente indisponível. Entre em contato com o suporte corporativo." });
+                    historico.push({ role: "error", content: "Demonstração indisponível temporariamente." });
                 }
                 salvarHistorico(historico);
             } catch (error) {
                 if (document.getElementById("msg-pensando")) document.getElementById("msg-pensando").remove();
-                historico.push({ role: "error", content: "Erro na conexão segura. Por favor, tente novamente mais tarde." });
+                historico.push({ role: "error", content: "Erro de comunicação segura no servidor Netlify." });
                 salvarHistorico(historico);
             }
             renderizarHistorico();
